@@ -45,12 +45,14 @@ import static android.content.ContentValues.TAG;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
+    DB db;
+
     private GoogleMap mMap;
     private static final int LOCATION_REQUEST = 500;
     ArrayList<LatLng> listPoints;
     Button distanse;
 
-
+    String longit, latit;
 
 
 
@@ -59,13 +61,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        Toast.makeText(getApplicationContext(), "опеределите Точку на КАРТЕ", Toast.LENGTH_LONG).show();
+
         distanse = (Button) findViewById(R.id.button2);
         distanse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mMap.clear();
-                Intent intent = getIntent();
-                String distansAll = intent.getStringExtra("distansAll");
+                //mMap.clear();
+                Intent intent = new Intent(getApplicationContext(), Add_Information.class);
+                startActivity(intent);
 
                 //Log.i(TAG, distansAll);
 
@@ -79,6 +83,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
         listPoints = new ArrayList<LatLng>();
     }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
@@ -100,7 +105,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
- // иcправить на установку только 1 маркера
+            // иcправить на установку только 1 маркера
             public void onMapLongClick(LatLng latLng) {
                 List<Marker> originMarkers = new ArrayList<>();
                 //ставим только 2 маркера
@@ -113,31 +118,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
                 //cоздаем маркер
-                 MarkerOptions markerOptions = new MarkerOptions();
-                 markerOptions.position(latLng);
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
 
-                 if (listPoints.size() == 1){
-                     //создаем первый маркер
-                     //markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
-                     markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                if (listPoints.size() == 1) {
+                    //создаем первый маркер
+                    //markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
+                    markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
 
-                 } else {
-                     //создаем второй маркер
-                     //markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
-                     //Toast.makeText(getApplicationContext(),  "координаты доставки"+listPoints.get(1)+"", Toast.LENGTH_LONG).show();
-                 }
-                 mMap.addMarker(markerOptions);
-                 //добавим направление
+                } else {
+                    //создаем второй маркер
+                    //markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                    //Toast.makeText(getApplicationContext(),  "координаты доставки"+listPoints.get(1)+"", Toast.LENGTH_LONG).show();
+                }
+                mMap.addMarker(markerOptions);
+                //добавим направление
                 if (listPoints.size() == 2) {
                     //создаем URL запрос по расссоянию
                     String url = getRequestedUrl(listPoints.get(0), listPoints.get(1));
-                    //Toast.makeText(getApplicationContext(), "координаты отгрузки" + listPoints.get(0) + "", Toast.LENGTH_LONG).show();
-                    //Toast.makeText(getApplicationContext(), "координаты доставки" + listPoints.get(1) + "", Toast.LENGTH_LONG).show();
-
                     TaskRequestDirections taskRequestDirections = new TaskRequestDirections();
                     taskRequestDirections.execute(url);
 
-                }else if (listPoints.size() > 2)  {
+                } else if (listPoints.size() > 2) {
                     listPoints.clear();
                     mMap.clear();
                     LatLng dhl = new LatLng(53.210463, 50.189022);
@@ -154,13 +156,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
     private String getRequestedUrl(LatLng origin, LatLng dest) {
 
-        String str_org = "origin=" + origin.latitude + ","+origin.longitude;
+        String str_org = "origin=" + origin.latitude + "," + origin.longitude;
 
-        String str_dest = "destination=" + dest.latitude+","+dest.longitude;
-
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+        longit = String.valueOf(dest.longitude);
+        latit = String.valueOf(dest.latitude);
+        //Toast.makeText(getApplicationContext(), "test " +longit +latit, Toast.LENGTH_SHORT).show();
         String sensor = "sensor=false";
 
         String mode = "mode=driving";
@@ -177,7 +180,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String responseString = "";
         InputStream inputStream = null;
         HttpsURLConnection httpsURLConnection = null;
-        try{
+        try {
             URL url = new URL(reqUrl);
             httpsURLConnection = (HttpsURLConnection) url.openConnection();
             httpsURLConnection.connect();
@@ -188,8 +191,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
 
             StringBuffer stringBuffer = new StringBuffer();
-            String  line = "";
-            while ((line = bufferedReader.readLine()) != null){
+            String line = "";
+            while ((line = bufferedReader.readLine()) != null) {
                 stringBuffer.append(line);
             }
 
@@ -197,10 +200,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             bufferedReader.close();
             inputStreamReader.close();
 
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (inputStream != null){
+            if (inputStream != null) {
                 inputStream.close();
             }
             httpsURLConnection.disconnect();
@@ -209,12 +212,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
-
     @SuppressLint("MissingPermission")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode){
+        switch (requestCode) {
             case LOCATION_REQUEST:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     mMap.setMyLocationEnabled(true);
@@ -223,53 +224,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    public class TaskRequestDirections extends AsyncTask<String, Void, String>{
-
+    public class TaskRequestDirections extends AsyncTask<String, Void, String> {
 
 
         @Override
         protected String doInBackground(String... strings) {
             String responseString = "";
-                try {
-                    responseString = requestDirection(strings[0]);
-                } catch (IOException e) {
-                    e.printStackTrace();
+            try {
+                responseString = requestDirection(strings[0]);
+            } catch (IOException e) {
+                e.printStackTrace();
 
-                }
-                return responseString;
             }
-
-
-            protected void onPostExecute(String s) {
-                super.onPostExecute(s);
-                // вставляем json
-
-                TaskParser taskParser = new TaskParser();
-                taskParser.execute(s);
-            }
+            return responseString;
         }
 
-        public class TaskParser extends AsyncTask<String, Void, List<List<HashMap<String, String>>> >{
 
-            @Override
-            protected List<List<HashMap<String, String>>> doInBackground(String... strings) {
-                JSONObject jsonObject = null;
-                List<List<HashMap<String, String>>> routes = null;
-                try {
-                    jsonObject = new JSONObject(strings[0]);
-                    DirectionsParser directionsParser = new DirectionsParser();
-                    routes = directionsParser.parse(jsonObject);
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            // вставляем json
+
+            TaskParser taskParser = new TaskParser();
+            taskParser.execute(s);
+        }
+    }
+
+    public class TaskParser extends AsyncTask<String, Void, List<List<HashMap<String, String>>>> {
+
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... strings) {
+            JSONObject jsonObject = null;
+            List<List<HashMap<String, String>>> routes = null;
+            try {
+                jsonObject = new JSONObject(strings[0]);
+                DirectionsParser directionsParser = new DirectionsParser();
+                routes = directionsParser.parse(jsonObject);
 
 
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                return routes;
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
 
-        public void onPostExecute(List<List<HashMap<String, String>>> lists){
-          //все на карту
+            return routes;
+        }
+
+        public void onPostExecute(List<List<HashMap<String, String>>> lists) {
+            //все на карту
 
             ArrayList points = null;
             ArrayList distance = null;
@@ -280,12 +280,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //String a = "";
             String[] array = null;
 
-            for (List<HashMap<String, String>> path : lists){
+            for (List<HashMap<String, String>> path : lists) {
                 points = new ArrayList();
                 distance = new ArrayList();
                 polylineOptions = new PolylineOptions();
 
-                for (HashMap<String, String> point : path){
+                for (HashMap<String, String> point : path) {
                     double lat = Double.parseDouble(point.get("lat"));
                     double lon = Double.parseDouble(point.get("lon"));
                     String dist = point.get("dist");
@@ -295,15 +295,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     al.clear();
                     al.addAll(hs);
 
-
-                    /*List<String> al = new ArrayList<>();
-                    // add elements to al, including duplicates
-                    Set<String> hs = new HashSet<>();
-                    hs.addAll(al);
-                    al.clear();
-                    al.addAll(hs);*/
-
-                    //Log.i(TAG, a);
                 }
 
 
@@ -313,17 +304,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 polylineOptions.geodesic(true);
             }
 
-            if (polylineOptions != null){
+            if (polylineOptions != null) {
                 mMap.addPolyline(polylineOptions);
-            }else {
-                Toast.makeText(getApplicationContext(),  "herovo", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "Ошибка в расчете, попробуйте снова", Toast.LENGTH_SHORT).show();
             }
 
             String a = "";
-            for (int i = 0; i < al.size(); i++){
-                if (al.get(i).endsWith(" m")){
+            for (int i = 0; i < al.size(); i++) {
+                if (al.get(i).endsWith(" m")) {
                     //Log.i(TAG, al.get(i) +"metr");
-                    Double k = Double.parseDouble(al.get(i).substring(0,al.get(i).length()-2));
+                    Double k = Double.parseDouble(al.get(i).substring(0, al.get(i).length() - 2));
                     k = k * 0.001;
                     String f = k.toString();
                     alres.add(f);
@@ -331,25 +322,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     //Log.i(TAG, al.get(i));
 
                 } else {//Log.i(TAG, al.get(i)+ "km");
-                    alres.add(al.get(i).substring(0,al.get(i).length()-3));
+                    alres.add(al.get(i).substring(0, al.get(i).length() - 3));
                     //Log.i(TAG, al.get(i));
                 }
 
 
             }
             Double result = 0.0;
-            for (int i = 0; i < alres.size(); i++){
+            for (int i = 0; i < alres.size(); i++) {
                 result = result + Double.parseDouble(alres.get(i));
             }
             String distansOnStartToEnd = result.toString();
             Log.i(TAG, distansOnStartToEnd);
+            distance(distansOnStartToEnd);
 
+            //Toast.makeText(getApplicationContext(), "расстояние" + distansOnStartToEnd, Toast.LENGTH_LONG).show();
 
 
         }
+
+
     }
 
-
+    public void distance(String distansOnStartToEnd) {
+        //goto AddActivity
+        //Double dest = Double.parseDouble(distansOnStartToEnd);
+                Intent modify_intent = new Intent(getApplicationContext(), Add_Information.class);
+        Toast.makeText(getApplicationContext(), "test " +longit +latit, Toast.LENGTH_SHORT).show();
+        modify_intent.putExtra("dest", distansOnStartToEnd);
+        modify_intent.putExtra("longit", longit);
+        modify_intent.putExtra("latit", latit);
+        startActivity(modify_intent);
+    }
 }
-
-
